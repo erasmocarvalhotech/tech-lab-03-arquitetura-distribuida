@@ -1,0 +1,35 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: produto-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/db_produto
+    username: ${POSTGRES_USER:techlab}
+    password: ${POSTGRES_PASSWORD:techlab}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:techlab}
+    password: ${RABBITMQ_DEFAULT_PASS:techlab}
+
+mb:
+  techlab:
+    product:
+      exchange:
+        topic:
+          product-changed: mb-techlab-product-exchange-topic-product-changed
+      routing-key:
+        product-changed: product-changed
