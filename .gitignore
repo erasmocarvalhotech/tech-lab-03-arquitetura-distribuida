@@ -1,2 +1,4 @@
 .codegraph/
 *.bkp
+target/
+*.class
