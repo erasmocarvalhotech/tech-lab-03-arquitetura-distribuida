@@ -1,0 +1,92 @@
+name: tech-lab-03-arquitetura-distribuida
+
+services:
+  postgres-produto:
+    image: postgres:16-alpine
+    container_name: tech-lab-03-arquitetura-distribuida-postgres-produto
+    environment:
+      POSTGRES_DB: db_produto
+      POSTGRES_USER: ${POSTGRES_USER:-techlab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-techlab}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-produto-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-techlab} -d db_produto"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-estoque:
+    image: postgres:16-alpine
+    container_name: tech-lab-03-arquitetura-distribuida-postgres-estoque
+    environment:
+      POSTGRES_DB: db_estoque
+      POSTGRES_USER: ${POSTGRES_USER:-techlab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-techlab}
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres-estoque-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-techlab} -d db_estoque"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-pedido:
+    image: postgres:16-alpine
+    container_name: tech-lab-03-arquitetura-distribuida-postgres-pedido
+    environment:
+      POSTGRES_DB: db_pedido
+      POSTGRES_USER: ${POSTGRES_USER:-techlab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-techlab}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-pedido-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-techlab} -d db_pedido"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: tech-lab-03-arquitetura-distribuida-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-techlab}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-techlab}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./infra/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./infra/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: tech-lab-03-arquitetura-distribuida-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-produto-data:
+  postgres-estoque-data:
+  postgres-pedido-data:
+  rabbitmq-data:
+  redis-data:
