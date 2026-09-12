@@ -1,0 +1,199 @@
+{
+  "rabbit_version": "3.13.0",
+  "vhosts": [
+    { "name": "/" }
+  ],
+  "users": [
+    {
+      "name": "techlab",
+      "password": "techlab",
+      "tags": "administrator"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "techlab",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "mb-techlab-product-exchange-topic-product-changed",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "mb-techlab-order-exchange-topic-reservation-requested",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "mb-techlab-stock-exchange-topic-reservation-processed",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "mb-techlab-stock-queue-product-changed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-stock-queue-product-changed-delayed"
+      }
+    },
+    {
+      "name": "mb-techlab-stock-queue-product-changed-delayed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 60000,
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-stock-queue-product-changed"
+      }
+    },
+    {
+      "name": "mb-techlab-stock-queue-product-changed-failed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "mb-techlab-order-queue-product-changed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-order-queue-product-changed-delayed"
+      }
+    },
+    {
+      "name": "mb-techlab-order-queue-product-changed-delayed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 60000,
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-order-queue-product-changed"
+      }
+    },
+    {
+      "name": "mb-techlab-order-queue-product-changed-failed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "mb-techlab-stock-queue-reservation-requested",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-stock-queue-reservation-requested-delayed"
+      }
+    },
+    {
+      "name": "mb-techlab-stock-queue-reservation-requested-delayed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 60000,
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-stock-queue-reservation-requested"
+      }
+    },
+    {
+      "name": "mb-techlab-stock-queue-reservation-requested-failed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "mb-techlab-order-queue-reservation-processed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-order-queue-reservation-processed-delayed"
+      }
+    },
+    {
+      "name": "mb-techlab-order-queue-reservation-processed-delayed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 60000,
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "mb-techlab-order-queue-reservation-processed"
+      }
+    },
+    {
+      "name": "mb-techlab-order-queue-reservation-processed-failed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "mb-techlab-product-exchange-topic-product-changed",
+      "vhost": "/",
+      "destination": "mb-techlab-stock-queue-product-changed",
+      "destination_type": "queue",
+      "routing_key": "product-changed",
+      "arguments": {}
+    },
+    {
+      "source": "mb-techlab-product-exchange-topic-product-changed",
+      "vhost": "/",
+      "destination": "mb-techlab-order-queue-product-changed",
+      "destination_type": "queue",
+      "routing_key": "product-changed",
+      "arguments": {}
+    },
+    {
+      "source": "mb-techlab-order-exchange-topic-reservation-requested",
+      "vhost": "/",
+      "destination": "mb-techlab-stock-queue-reservation-requested",
+      "destination_type": "queue",
+      "routing_key": "reservation-requested",
+      "arguments": {}
+    },
+    {
+      "source": "mb-techlab-stock-exchange-topic-reservation-processed",
+      "vhost": "/",
+      "destination": "mb-techlab-order-queue-reservation-processed",
+      "destination_type": "queue",
+      "routing_key": "reservation-processed",
+      "arguments": {}
+    }
+  ]
+}

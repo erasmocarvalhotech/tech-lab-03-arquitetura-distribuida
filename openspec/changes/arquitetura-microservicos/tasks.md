@@ -1,10 +1,10 @@
 ## 1. Infraestrutura local
 
-- [ ] 1.1 Criar `docker-compose.yml` com 3 instâncias PostgreSQL (db_produto, db_estoque, db_pedido), 1 RabbitMQ (com management plugin) e 1 Redis
-- [ ] 1.2 Declarar exchange `mb-techlab-product-exchange-topic-product-changed` (routing key `product-changed`) e as filas `mb-techlab-stock-queue-product-changed` e `mb-techlab-order-queue-product-changed`, cada uma com par `-delayed`/`-failed` (ver `docs/taxonomia-filas-rabbitmq.md`)
-- [ ] 1.3 Declarar exchange `mb-techlab-order-exchange-topic-reservation-requested` (routing key `reservation-requested`) e a fila `mb-techlab-stock-queue-reservation-requested` com par `-delayed`/`-failed`
-- [ ] 1.4 Declarar exchange `mb-techlab-stock-exchange-topic-reservation-processed` (routing key `reservation-processed`) e a fila `mb-techlab-order-queue-reservation-processed` com par `-delayed`/`-failed`
-- [ ] 1.5 Para cada fila `-delayed`: configurar `x-message-ttl=60000` (1 min) + `x-dead-letter-exchange=""` + `x-dead-letter-routing-key` = nome da fila principal correspondente
+- [x] 1.1 Criar `docker-compose.yml` com 3 instâncias PostgreSQL (db_produto, db_estoque, db_pedido), 1 RabbitMQ (com management plugin) e 1 Redis
+- [x] 1.2 Declarar exchange `mb-techlab-product-exchange-topic-product-changed` (routing key `product-changed`) e as filas `mb-techlab-stock-queue-product-changed` e `mb-techlab-order-queue-product-changed`, cada uma com par `-delayed`/`-failed` (ver `docs/taxonomia-filas-rabbitmq.md`)
+- [x] 1.3 Declarar exchange `mb-techlab-order-exchange-topic-reservation-requested` (routing key `reservation-requested`) e a fila `mb-techlab-stock-queue-reservation-requested` com par `-delayed`/`-failed`
+- [x] 1.4 Declarar exchange `mb-techlab-stock-exchange-topic-reservation-processed` (routing key `reservation-processed`) e a fila `mb-techlab-order-queue-reservation-processed` com par `-delayed`/`-failed`
+- [x] 1.5 Para cada fila `-delayed`: configurar `x-message-ttl=60000` (1 min) + `x-dead-letter-exchange=""` + `x-dead-letter-routing-key` = nome da fila principal correspondente
 
 ## 2. produto-service
 
