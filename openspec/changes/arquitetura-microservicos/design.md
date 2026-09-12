@@ -57,6 +57,20 @@ Streams definidos: `product-changed` (Produto → Estoque e Pedido, fanout em du
 **Por quê**: um exchange por stream (em vez de por ação) evita explosão de recursos (3 exchanges + 6 filas só para eventos de produto, por exemplo) mantendo o discriminador de ação como dado de mensagem, não de topologia. Resiliência em 3 camadas foi adotada integralmente (não só uma DLQ simples) por decisão explícita, mesmo sendo lab.
 **Alternativa considerada**: um exchange por ação-realizada (ex.: `product-created`, `product-updated`, `product-deactivated` cada um com seu próprio exchange/routing key), replicando à risca o padrão corporativo de origem. Rejeitada para este lab por gerar volume de recursos desproporcional ao número de consumidores (2) e ao objetivo didático atual.
 
+### 7. Limite de retentativas: 1 tentativa inicial + 2 retries via `-delayed` (3 operações no total), depois `-failed`
+
+A topologia declarativa (exchange/fila/DLX) por si só não conta tentativas — RabbitMQ cicla mensagem entre fila principal e `-delayed` indefinidamente se o consumidor sempre rejeitar. Cabe ao **consumidor** (todo listener que consome fila principal com par `-delayed`/`-failed`: `estoque-service` em `product-changed` e `reservation-requested`; `pedido-service` em `product-changed` e `reservation-processed`) inspecionar o header `x-death` (array que o próprio RabbitMQ preenche a cada dead-letter) e decidir entre rejeitar de novo (mais um ciclo `-delayed`) ou publicar direto na `-failed`.
+
+Regra: procurar no `x-death` a entrada com `queue = <nome-da-fila>-delayed` e `reason = expired` (retorno por TTL). Seu campo `count` indica quantos ciclos de retry já foram concluídos:
+
+- `count` ausente ou `0` → primeira tentativa (original). Falhou → rejeita (nack sem requeue) → cai na `-delayed` (1º retry agendado).
+- `count = 1` → esta é a 2ª tentativa (1º retry). Falhou de novo → rejeita → cai na `-delayed` outra vez (2º retry agendado).
+- `count = 2` → esta é a 3ª tentativa (2º retry, o último permitido). Falhou de novo → **não rejeita** — publica a mensagem manualmente na fila `-failed` correspondente e confirma (ack) a mensagem original.
+
+Total: 1 tentativa inicial + 2 retries = 3 operações de processamento antes de cair definitivamente em `-failed`.
+
+**Por quê**: `x-death` já vem de graça no protocolo AMQP/RabbitMQ quando dead-lettering é usado — não precisa de tabela de controle nem contador externo. 3 tentativas (1 + 2) é o valor combinado para este lab; ajustável só mudando o limiar de `count` checado no código.
+
 ## Modelo de Dados
 
 ### db_produto
