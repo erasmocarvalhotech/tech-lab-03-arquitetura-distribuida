@@ -1,0 +1,57 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: pedido-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5434/db_pedido
+    username: ${POSTGRES_USER:techlab}
+    password: ${POSTGRES_PASSWORD:techlab}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:techlab}
+    password: ${RABBITMQ_DEFAULT_PASS:techlab}
+    listener:
+      simple:
+        default-requeue-rejected: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+mb:
+  techlab:
+    order:
+      # Stream product-changed (Produto -> Pedido) - topologia declarada em infra/rabbitmq/definitions.json
+      queue:
+        product:
+          changed: mb-techlab-order-queue-product-changed
+        # Stream reservation-processed (Estoque -> Pedido)
+        reservation:
+          processed: mb-techlab-order-queue-reservation-processed
+      # Stream reservation-requested (Pedido -> Estoque)
+      exchange:
+        topic:
+          reservation:
+            requested: mb-techlab-order-exchange-topic-reservation-requested
+      routing:
+        key:
+          reservation:
+            requested: reservation-requested
+    # Limite de retentativas (Decisao 7 do design.md): 1 tentativa inicial + 2 retries via -delayed
+    retry:
+      max-death-count: 2
