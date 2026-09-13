@@ -47,7 +47,7 @@ class ReservationRequestedListenerTest {
         listener = new ReservationRequestedListener(saldoEstoqueService, publisher, retryPolicy, FILA);
         ReservationRequestedEvent event = new ReservationRequestedEvent("e1", OffsetDateTime.now(), 456L,
                 List.of(new ItemReserva(123L, 2)));
-        when(saldoEstoqueService.reservar(event.itens())).thenReturn(ResultadoReserva.reservaConfirmada());
+        when(saldoEstoqueService.reservar(event.pedidoId(), event.itens())).thenReturn(ResultadoReserva.reservaConfirmada());
 
         listener.onReservationRequested(event, message);
 
@@ -64,7 +64,7 @@ class ReservationRequestedListenerTest {
         ReservationRequestedEvent event = new ReservationRequestedEvent("e1", OffsetDateTime.now(), 456L,
                 List.of(new ItemReserva(123L, 5)));
         ItemIndisponivel indisponivel = new ItemIndisponivel(123L, 5, 2);
-        when(saldoEstoqueService.reservar(event.itens())).thenReturn(ResultadoReserva.reservaRejeitada(List.of(indisponivel)));
+        when(saldoEstoqueService.reservar(event.pedidoId(), event.itens())).thenReturn(ResultadoReserva.reservaRejeitada(List.of(indisponivel)));
 
         listener.onReservationRequested(event, message);
 
@@ -81,7 +81,7 @@ class ReservationRequestedListenerTest {
         ReservationRequestedEvent event = new ReservationRequestedEvent("e1", OffsetDateTime.now(), 456L,
                 List.of(new ItemReserva(123L, 2)));
         OptimisticLockingFailureException conflito = new OptimisticLockingFailureException("conflito de versao");
-        when(saldoEstoqueService.reservar(event.itens())).thenThrow(conflito);
+        when(saldoEstoqueService.reservar(event.pedidoId(), event.itens())).thenThrow(conflito);
         when(retryPolicy.tratarFalha(message, FILA, conflito)).thenReturn(false);
 
         assertThatThrownBy(() -> listener.onReservationRequested(event, message))
@@ -96,7 +96,7 @@ class ReservationRequestedListenerTest {
         ReservationRequestedEvent event = new ReservationRequestedEvent("e1", OffsetDateTime.now(), 456L,
                 List.of(new ItemReserva(123L, 2)));
         OptimisticLockingFailureException conflito = new OptimisticLockingFailureException("conflito de versao");
-        when(saldoEstoqueService.reservar(event.itens())).thenThrow(conflito);
+        when(saldoEstoqueService.reservar(event.pedidoId(), event.itens())).thenThrow(conflito);
         when(retryPolicy.tratarFalha(message, FILA, conflito)).thenReturn(true);
 
         listener.onReservationRequested(event, message);
