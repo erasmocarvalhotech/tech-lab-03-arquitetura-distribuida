@@ -90,6 +90,6 @@ Vale deixar explícito pro grupo, no final: o que foi feito aqui é **desenvolvi
 
 ## Exercícios sugeridos pros participantes
 
-- Adicionar um 4º serviço (ex.: notificações) que consome `reservation-processed` sem que os outros três precisem saber que ele existe
+- Adicionar um 4º serviço (ex.: `notificacao-service`) que reage à confirmação de um pedido, sem que os outros três precisem saber que ele existe. Mecânica: `estoque-service` já publica o resultado da reserva no exchange `mb-techlab-stock-exchange-topic-reservation-processed` (routing key `reservation-processed`); hoje só o `pedido-service` escuta, através da própria fila `mb-techlab-order-queue-reservation-processed`. Pra adicionar o novo consumidor, basta: (1) declarar uma fila nova (ex.: `mb-techlab-notification-queue-reservation-processed`), (2) bindar essa fila no mesmo exchange com a mesma routing key, (3) consumir e disparar a notificação. Nenhuma linha muda em produto, estoque ou pedido — é o mesmo padrão de fanout que `product-changed` já usa hoje pra alimentar Estoque e Pedido ao mesmo tempo (duas filas bindadas na mesma exchange). O exercício mostra na prática que, num sistema orientado a evento, adicionar um consumidor novo não exige avisar ninguém — só bindar na fila certa
 - Forçar uma falha proposital num listener e observar o ciclo `-delayed` → `-failed` acontecer de verdade no RabbitMQ Management
 - Propor uma mudança de contrato (ex.: novo campo no evento `product-changed`) e discutir como isso se comunicaria pros outros dois serviços sem quebrar nada
