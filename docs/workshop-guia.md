@@ -84,12 +84,32 @@ Discussão pro grupo: por que testes unitários "verdes" não bastaram aqui? O q
 
 Com múltiplos agentes/devs trabalhando, configure branch protection em `develop` e `main` (via GitHub): exigir PR antes de merge, bloquear push direto até pro admin. Decida junto com o grupo se aprovação de review é obrigatória (e o que isso significa quando o "dono" do repo é o único com acesso de escrita).
 
+## Etapa 6 — Evolução pós-lab: observabilidade
+
+Diferente das Etapas 1-5 (construção paralela, vários agentes de uma vez), essa etapa simula manutenção contínua de um sistema já no ar: um único agente dedicado ("agente de observabilidade"), trabalhando em sequência, evoluindo o sistema aos poucos sem tocar em lógica de negócio.
+
+Fluxo usado neste repo (`openspec/specs/observabilidade/`):
+
+1. **Proposta 1 — tracing**: `openspec-propose` pra desenhar tracing distribuído (Micrometer Tracing + bridge OTel) antes de mexer em código.
+2. **Implementação**: seguindo `tasks.md`, com validação real (não só "compilou") — trace conferido via API do backend de observabilidade, não só "parece que funcionou".
+3. **Achado durante a implementação que mudou a decisão original**: o backend escolhido na proposta (Zipkin) não tinha o receptor OTLP que o design assumia — só descoberto testando de verdade (`404` na prática, não em teoria). Troca de backend documentada como nota no próprio `design.md`, não escondida.
+4. **Arquivamento**: `openspec-archive-change`, em PR separado do de implementação (mesmo padrão da Etapa 2) — promove a capacidade `observabilidade` como spec canônica.
+5. **Proposta 2 — logs**: change novo (`observabilidade-logs`), a partir do que ficou definido na spec canônica anterior, mesmo ciclo completo (proposta → design → specs → tasks → implementação → validação).
+
+Discussão pro grupo: por que separar "proposta" de "implementação" de "arquivamento" em PRs distintos, mesmo sendo o mesmo agente fazendo tudo? O que se perde (ou ganha) em rastreabilidade se isso fosse um único commit gigante?
+
+Achados que só apareceram testando de verdade, não só lendo doc (documentados no próprio `design.md`/`tasks.md` de cada change, não escondidos):
+- Autoconfig de tracing do Spring Boot só ativa com `spring-boot-starter-actuator` no classpath — sem erro, sem log, só silenciosamente sem efeito.
+- Propagação de trace via RabbitMQ é opt-in (`observation-enabled`), diferente de HTTP que é automático.
+- Provisioning de datasource do Grafana faz expansão de variável de ambiente em `${VAR}` — precisa escapar (`$$`) template de query que usa essa sintaxe.
+
 ## Fechamento: o que isso simula de verdade
 
 Vale deixar explícito pro grupo, no final: o que foi feito aqui é **desenvolvimento multi-agente em paralelo com validação centralizada** — não "orquestração de agentes" no sentido técnico estrito (que implicaria um orquestrador programático disparando e sequenciando sub-agentes automaticamente). Aqui, cada sessão foi aberta manualmente, e a coordenação aconteceu via contrato compartilhado (`design.md`) + revisão humana/agente no papel de master. É um modelo que troca automação total por visibilidade — cada participante vê e pode intervir no que está sendo construído, o que tem valor didático que uma orquestração 100% automática não teria.
 
 ## Exercícios sugeridos pros participantes
 
+- Observabilidade (tracing distribuído + logs centralizados, trace-to-logs no Grafana) já foi feita neste repo como exercício resolvido — ver Etapa 6, `openspec/specs/observabilidade/` e [docs/guia-grafana.md](guia-grafana.md). Bom ponto de partida pra comparar antes/depois de código sem observabilidade.
 - Adicionar um 4º serviço (ex.: `notificacao-service`) que reage à confirmação de um pedido, sem que os outros três precisem saber que ele existe. Mecânica: `estoque-service` já publica o resultado da reserva no exchange `mb-techlab-stock-exchange-topic-reservation-processed` (routing key `reservation-processed`); hoje só o `pedido-service` escuta, através da própria fila `mb-techlab-order-queue-reservation-processed`. Pra adicionar o novo consumidor, basta: (1) declarar uma fila nova (ex.: `mb-techlab-notification-queue-reservation-processed`), (2) bindar essa fila no mesmo exchange com a mesma routing key, (3) consumir e disparar a notificação. Nenhuma linha muda em produto, estoque ou pedido — é o mesmo padrão de fanout que `product-changed` já usa hoje pra alimentar Estoque e Pedido ao mesmo tempo (duas filas bindadas na mesma exchange). O exercício mostra na prática que, num sistema orientado a evento, adicionar um consumidor novo não exige avisar ninguém — só bindar na fila certa
 - Forçar uma falha proposital num listener e observar o ciclo `-delayed` → `-failed` acontecer de verdade no RabbitMQ Management
 - Propor uma mudança de contrato (ex.: novo campo no evento `product-changed`) e discutir como isso se comunicaria pros outros dois serviços sem quebrar nada

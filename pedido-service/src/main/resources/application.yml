@@ -36,6 +36,10 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+logging:
+  file:
+    name: ../logs/pedido-service/app.log
+
 management:
   tracing:
     sampling:

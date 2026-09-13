@@ -97,6 +97,33 @@ services:
       - "4317:4317"
       - "4318:4318"
 
+  loki:
+    image: grafana/loki:latest
+    container_name: tech-lab-03-arquitetura-distribuida-loki
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    volumes:
+      - ./infra/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: tech-lab-03-arquitetura-distribuida-alloy
+    command:
+      - "run"
+      - "--server.http.listen-addr=0.0.0.0:12345"
+      - "--storage.path=/var/lib/alloy/data"
+      - "/etc/alloy/config.alloy"
+    volumes:
+      - ./infra/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./logs:/var/log/techlab:ro
+      - alloy-data:/var/lib/alloy/data
+    ports:
+      - "12345:12345"
+    depends_on:
+      - loki
+
   grafana:
     image: grafana/grafana:latest
     container_name: tech-lab-03-arquitetura-distribuida-grafana
@@ -110,6 +137,7 @@ services:
       - "3000:3000"
     depends_on:
       - tempo
+      - loki
 
 volumes:
   postgres-produto-data:
@@ -118,3 +146,5 @@ volumes:
   rabbitmq-data:
   redis-data:
   tempo-data:
+  loki-data:
+  alloy-data:

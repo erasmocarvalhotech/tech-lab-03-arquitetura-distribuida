@@ -1,0 +1,18 @@
+local.file_match "techlab_logs" {
+  path_targets = [
+    {"__path__" = "/var/log/techlab/produto-service/*.log", "service_name" = "produto-service"},
+    {"__path__" = "/var/log/techlab/estoque-service/*.log", "service_name" = "estoque-service"},
+    {"__path__" = "/var/log/techlab/pedido-service/*.log", "service_name" = "pedido-service"},
+  ]
+}
+
+loki.source.file "techlab_logs" {
+  targets    = local.file_match.techlab_logs.targets
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
