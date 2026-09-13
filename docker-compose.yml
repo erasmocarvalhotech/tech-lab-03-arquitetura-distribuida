@@ -84,9 +84,37 @@ services:
       timeout: 5s
       retries: 10
 
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tech-lab-03-arquitetura-distribuida-tempo
+    user: "0:0"
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./infra/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/tmp/tempo
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tech-lab-03-arquitetura-distribuida-grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - tempo
+
 volumes:
   postgres-produto-data:
   postgres-estoque-data:
   postgres-pedido-data:
   rabbitmq-data:
   redis-data:
+  tempo-data:

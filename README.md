@@ -20,6 +20,8 @@ Explorar padrões de arquitetura distribuída (comunicação assíncrona entre s
 
 Detalhes completos: proposta, decisões e trade-offs em [openspec/changes/arquitetura-microservicos/](openspec/changes/arquitetura-microservicos/) (`proposal.md`, `design.md`, `specs/`, `tasks.md`); diagrama C4 de containers em [docs/arquitetura-c4-container.drawio](docs/arquitetura-c4-container.drawio); convenção de nomenclatura de filas/exchanges em [docs/taxonomia-filas-rabbitmq.md](docs/taxonomia-filas-rabbitmq.md).
 
+Tracing distribuído (traceId/spanId correlacionados nos 3 serviços, visualização em Grafana + Tempo): [openspec/changes/observabilidade-tracing/](openspec/changes/observabilidade-tracing/) e guia de uso em [docs/guia-grafana-tempo.md](docs/guia-grafana-tempo.md).
+
 ## Status
 
 Arquitetura definida (proposta OpenSpec completa). Implementação dos serviços ainda não iniciada.

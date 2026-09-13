@@ -33,6 +33,7 @@ public class ProductChangedListener {
         try {
             if (EVENT_TYPE_CREATED.equals(eventType)) {
                 saldoEstoqueService.criarSaldoZerado(event.produtoId());
+                log.info("Saldo de estoque criado: produtoId={} sku={}", event.produtoId(), event.sku());
             } else {
                 log.debug("event-type={} ignorado pelo estoque-service (produtoId={})", eventType, event.produtoId());
             }
