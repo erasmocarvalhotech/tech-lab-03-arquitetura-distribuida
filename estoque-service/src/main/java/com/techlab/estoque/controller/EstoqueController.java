@@ -7,6 +7,8 @@ import com.techlab.estoque.exception.ProdutoNaoEncontradoException;
 import com.techlab.estoque.repository.SaldoEstoqueRepository;
 import com.techlab.estoque.service.SaldoEstoqueService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/estoque")
 public class EstoqueController {
+
+    private static final Logger log = LoggerFactory.getLogger(EstoqueController.class);
 
     private final SaldoEstoqueService saldoEstoqueService;
     private final SaldoEstoqueRepository saldoEstoqueRepository;
@@ -33,6 +37,7 @@ public class EstoqueController {
         saldoEstoqueService.registrarEntrada(request.produtoId(), request.quantidade());
         SaldoEstoque saldo = saldoEstoqueRepository.findByProdutoId(request.produtoId())
                 .orElseThrow(() -> new ProdutoNaoEncontradoException(request.produtoId()));
+        log.info("Entrada de estoque registrada: produtoId={} quantidade={}", request.produtoId(), request.quantidade());
         return ResponseEntity.status(HttpStatus.CREATED).body(SaldoEstoqueResponse.from(saldo));
     }
 

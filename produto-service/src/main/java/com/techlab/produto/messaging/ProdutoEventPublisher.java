@@ -1,5 +1,7 @@
 package com.techlab.produto.messaging;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +11,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 public class ProdutoEventPublisher {
+
+    private static final Logger log = LoggerFactory.getLogger(ProdutoEventPublisher.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final String exchange;
@@ -32,5 +36,6 @@ public class ProdutoEventPublisher {
                     return message;
                 };
         rabbitTemplate.convertAndSend(exchange, routingKey, payload, addEventTypeHeader);
+        log.info("Evento {} publicado para produtoId={}", event.tipo().eventType(), payload.produtoId());
     }
 }

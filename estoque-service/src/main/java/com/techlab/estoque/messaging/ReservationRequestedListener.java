@@ -4,6 +4,8 @@ import com.techlab.estoque.dto.ReservationProcessedEvent;
 import com.techlab.estoque.dto.ReservationRequestedEvent;
 import com.techlab.estoque.service.ResultadoReserva;
 import com.techlab.estoque.service.SaldoEstoqueService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +17,8 @@ import java.util.UUID;
 
 @Component
 public class ReservationRequestedListener {
+
+    private static final Logger log = LoggerFactory.getLogger(ReservationRequestedListener.class);
 
     private final SaldoEstoqueService saldoEstoqueService;
     private final EstoqueEventPublisher publisher;
@@ -35,6 +39,7 @@ public class ReservationRequestedListener {
         try {
             ResultadoReserva resultado = saldoEstoqueService.reservar(event.itens());
             publisher.publicarReservationProcessed(paraEvento(event, resultado));
+            log.info("Reserva de estoque processada: pedidoId={} confirmada={}", event.pedidoId(), resultado.confirmada());
         } catch (Exception ex) {
             // OptimisticLockingFailureException (conflito de concorrencia) e qualquer outra falha
             // tecnica caem aqui - nao publicam resultado de negocio nesta tentativa (Decisao 3).
