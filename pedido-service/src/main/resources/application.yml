@@ -24,14 +24,25 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_DEFAULT_USER:techlab}
     password: ${RABBITMQ_DEFAULT_PASS:techlab}
+    template:
+      observation-enabled: true
     listener:
       simple:
         default-requeue-rejected: false
+        observation-enabled: true
 
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
 
 mb:
   techlab:

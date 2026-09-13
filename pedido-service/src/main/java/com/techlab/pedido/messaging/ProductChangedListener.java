@@ -51,10 +51,10 @@ public class ProductChangedListener {
     private void aplicarEvento(String eventType, ProductChangedEvent event) {
         if (EVENT_TYPE_CREATED.equals(eventType) || EVENT_TYPE_UPDATED.equals(eventType)) {
             produtoCacheService.upsert(new ProdutoCacheDTO(event.produtoId(), event.nome(), event.preco(), event.ativo()));
-            log.debug("Cache local de produto atualizado: produtoId={} eventType={}", event.produtoId(), eventType);
+            log.info("Cache local de produto atualizado: produtoId={} eventType={}", event.produtoId(), eventType);
         } else if (EVENT_TYPE_DEACTIVATED.equals(eventType)) {
             produtoCacheService.evict(event.produtoId());
-            log.debug("Cache local de produto removido: produtoId={}", event.produtoId());
+            log.info("Cache local de produto removido: produtoId={}", event.produtoId());
         } else {
             log.debug("event-type={} ignorado pelo pedido-service (produtoId={})", eventType, event.produtoId());
         }

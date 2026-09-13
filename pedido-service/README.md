@@ -10,6 +10,13 @@ Detalhes de arquitetura, decisões e contratos: [openspec/changes/arquitetura-mi
 - Maven 3.9+
 - Docker + Docker Compose (para subir PostgreSQL, RabbitMQ e Redis)
 
+Se o `java -version`/`mvn -version` do terminal cair no JDK errado (ex.: outro Java já em `PATH`), aponte o terminal PowerShell atual para o JDK 21 antes de rodar `mvn` (vale só para a sessão aberta do terminal):
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.11"
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+```
+
 ## Subir a infraestrutura
 
 A partir da raiz do repositório (não desta pasta):

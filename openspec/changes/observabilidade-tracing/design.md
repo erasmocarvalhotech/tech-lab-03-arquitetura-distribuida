@@ -29,6 +29,8 @@ Os três microsserviços (`produto-service`, `estoque-service`, `pedido-service`
 
 **Zipkin como backend**: mantido como backend/UI de visualização mesmo com a troca pro bridge OTel — o Zipkin moderno aceita ingestão via OTLP (receiver a habilitar/validar na Etapa de implementação), continuando como um único container simples, sem storage externo, adequado ao escopo de um lab. Se o receiver OTLP do Zipkin se mostrar limitado na prática, Grafana Tempo (nativamente OTLP-first) é a alternativa mais próxima a considerar.
 
+> **Nota de implementação**: o receiver OTLP do Zipkin não se mostrou "limitado" — não existe. A imagem oficial `openzipkin/zipkin:latest` (v3.6.1, testado) não embarca o módulo `zipkin-collector-otlp` no classpath (confirmado inspecionando `/zipkin/BOOT-INF/lib/` no container — só `zipkin-collector`, `-activemq`, `-kafka`, `-pulsar`, `-rabbitmq`, `-scribe`). `COLLECTOR_OTLP_HTTP_ENABLED=true` não tem efeito nenhum; `/v1/traces` sempre responde `404`. Aplicado o fallback já previsto acima: **Grafana Tempo** como backend, com **Grafana** como UI de consulta (Tempo não tem UI própria de busca de traces — só API). O Grafana aqui serve só pra Explore de traces via datasource Tempo, sem dashboards de métricas de negócio — o Non-Goal original ("não adicionar métricas/dashboards Grafana-Prometheus") continua valendo.
+
 ### 2. Amostragem 100% (`management.tracing.sampling.probability=1.0`)
 
 **Por quê**: em produção, amostrar 100% dos traces tem custo de performance e volume de dados; num lab, queremos ver todo trace gerado, sem surpresa de "cadê o trace que eu esperava". Valor documentado explicitamente como decisão de ambiente de lab, não como recomendação de produção.
@@ -41,8 +43,10 @@ Os três microsserviços (`produto-service`, `estoque-service`, `pedido-service`
 
 | Risco | Mitigação / decisão |
 |---|---|
-| Zipkin com storage in-memory perde todos os traces ao reiniciar o container | Aceitável para o lab — não é objetivo persistir histórico de traces além da sessão de teste atual. |
-| Receiver OTLP do Zipkin pode exigir configuração/flag específica (a confirmar na implementação) | Validar na Etapa 1 (infraestrutura) antes de seguir pros serviços; se o receiver se mostrar problemático, trocar o backend por Grafana Tempo (OTLP nativo) sem impacto na instrumentação dos serviços (a troca fica isolada na configuração do exporter). |
+| Tempo com storage local perde todos os traces ao reiniciar o container (volume `tempo-data` mitiga entre restarts, mas não é backup real) | Aceitável para o lab — não é objetivo persistir histórico de traces além da sessão de teste atual. |
+| ~~Receiver OTLP do Zipkin pode exigir configuração/flag específica~~ — confirmado que a imagem oficial não embarca o módulo OTLP | Resolvido: backend trocado para Grafana Tempo + Grafana como UI (ver nota de implementação na Decisão 1 acima). |
+| `micrometer-tracing-bridge-otel` no classpath não é suficiente — sem `spring-boot-starter-actuator`, a autoconfiguração de tracing não ativa (sem efeito, sem erro) | Adicionado `spring-boot-starter-actuator` aos 3 `pom.xml` (task 1.4). |
+| Trace não propaga automaticamente pelo RabbitMQ mesmo com o bridge ativo — instrumentação do `spring-rabbit` é opt-in, não automática como HTTP | Adicionado `spring.rabbitmq.template.observation-enabled=true` e `spring.rabbitmq.listener.simple.observation-enabled=true` nos 3 `application.yml` (task 1.3). Sem isso, HTTP correlaciona mas a mensageria quebra o trace (validado: log do consumidor aparecia com `traceId`/`spanId` vazios). |
 | Amostragem 100% em um cenário de carga real geraria volume alto de spans | Fora do escopo deste lab; documentado como decisão específica de ambiente local, não como recomendação a replicar em produção. |
 | Dependência nova em 3 `pom.xml` pode conflitar com versões gerenciadas pelo Spring Boot BOM | Usar as dependências sem versão explícita (herdada do `spring-boot-starter-parent`), consistente com o padrão já usado nos três serviços. |
 
