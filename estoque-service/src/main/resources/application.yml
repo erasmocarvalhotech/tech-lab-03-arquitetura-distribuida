@@ -35,6 +35,10 @@ spring:
         default-requeue-rejected: false
         observation-enabled: true
 
+logging:
+  file:
+    name: ../logs/estoque-service/app.log
+
 management:
   tracing:
     sampling:
