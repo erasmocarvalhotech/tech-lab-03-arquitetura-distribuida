@@ -37,7 +37,7 @@ public class ReservationRequestedListener {
     @RabbitListener(queues = "${mb.techlab.stock.queue.reservation.requested}")
     public void onReservationRequested(ReservationRequestedEvent event, Message message) {
         try {
-            ResultadoReserva resultado = saldoEstoqueService.reservar(event.itens());
+            ResultadoReserva resultado = saldoEstoqueService.reservar(event.pedidoId(), event.itens());
             publisher.publicarReservationProcessed(paraEvento(event, resultado));
             log.info("Reserva de estoque processada: pedidoId={} confirmada={}", event.pedidoId(), resultado.confirmada());
         } catch (Exception ex) {
