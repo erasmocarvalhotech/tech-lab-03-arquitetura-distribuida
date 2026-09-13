@@ -1,0 +1,274 @@
+{
+	"info": {
+		"_postman_id": "b3a1f2e0-6a2b-4b7e-9d3a-tech-lab-03",
+		"name": "tech-lab-03-arquitetura-distribuida",
+		"description": "Collection para exercitar os 3 microsservicos do laboratorio (produto-service, estoque-service, pedido-service). As requisicoes de criacao de produto geram nome/sku/descricao/preco aleatorios (roupas: camiseta, calca, tenis, etc) via pre-request script.\n\nFluxo sugerido: 1. Produto > Criar Produto (aleatorio) -> 2. Estoque > Registrar Entrada -> 3. Pedido > Criar Pedido -> 3. Pedido > Consultar Pedido.\n\nAs variaveis produtoId e pedidoId sao capturadas automaticamente das respostas e reaproveitadas pelas proximas requisicoes.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{ "key": "produto_base_url", "value": "http://localhost:8081" },
+		{ "key": "estoque_base_url", "value": "http://localhost:8082" },
+		{ "key": "pedido_base_url", "value": "http://localhost:8083" },
+		{ "key": "produtoId", "value": "" },
+		{ "key": "pedidoId", "value": "" }
+	],
+	"item": [
+		{
+			"name": "1. Produto",
+			"item": [
+				{
+					"name": "Criar Produto (aleatorio)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const categorias = [\"Camiseta\", \"Calca\", \"Tenis\", \"Jaqueta\", \"Bermuda\", \"Vestido\", \"Moletom\", \"Regata\"];",
+									"const adjetivos = [\"Basic\", \"Premium\", \"Slim Fit\", \"Esportivo\", \"Casual\", \"Urbano\", \"Classico\"];",
+									"const cores = [\"Preto\", \"Branco\", \"Azul\", \"Cinza\", \"Vermelho\", \"Verde\", \"Bege\"];",
+									"",
+									"function sorteia(lista) {",
+									"    return lista[Math.floor(Math.random() * lista.length)];",
+									"}",
+									"",
+									"function randomDigits(n) {",
+									"    let s = \"\";",
+									"    for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 10);",
+									"    return s;",
+									"}",
+									"",
+									"const categoria = sorteia(categorias);",
+									"const adjetivo = sorteia(adjetivos);",
+									"const cor = sorteia(cores);",
+									"",
+									"const nome = `${categoria} ${adjetivo} ${cor}`;",
+									"const sku = `${categoria.substring(0, 3).toUpperCase()}-${randomDigits(4)}`;",
+									"const descricao = `${categoria} ${adjetivo.toLowerCase()} na cor ${cor.toLowerCase()}`;",
+									"const preco = (Math.random() * (299.9 - 49.9) + 49.9).toFixed(2);",
+									"",
+									"pm.variables.set(\"produto_nome\", nome);",
+									"pm.variables.set(\"produto_sku\", sku);",
+									"pm.variables.set(\"produto_descricao\", descricao);",
+									"pm.variables.set(\"produto_preco\", preco);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const json = pm.response.json();",
+									"    pm.collectionVariables.set(\"produtoId\", json.id);",
+									"    console.log(\"produtoId capturado:\", json.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"{{produto_nome}}\",\n  \"descricao\": \"{{produto_descricao}}\",\n  \"sku\": \"{{produto_sku}}\",\n  \"preco\": {{produto_preco}}\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{produto_base_url}}/produtos",
+							"host": ["{{produto_base_url}}"],
+							"path": ["produtos"]
+						}
+					}
+				},
+				{
+					"name": "Listar Produtos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{produto_base_url}}/produtos",
+							"host": ["{{produto_base_url}}"],
+							"path": ["produtos"]
+						}
+					}
+				},
+				{
+					"name": "Consultar Produto por Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{produto_base_url}}/produtos/{{produtoId}}",
+							"host": ["{{produto_base_url}}"],
+							"path": ["produtos", "{{produtoId}}"]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Produto (novo preco aleatorio)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const nomes = [\"Camiseta Premium Azul\", \"Calca Slim Fit Preta\", \"Tenis Esportivo Branco\"];",
+									"pm.variables.set(\"produto_nome_upd\", nomes[Math.floor(Math.random() * nomes.length)]);",
+									"pm.variables.set(\"produto_preco_upd\", (Math.random() * (299.9 - 49.9) + 49.9).toFixed(2));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"{{produto_nome_upd}}\",\n  \"descricao\": \"Descricao atualizada via Postman\",\n  \"preco\": {{produto_preco_upd}}\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{produto_base_url}}/produtos/{{produtoId}}",
+							"host": ["{{produto_base_url}}"],
+							"path": ["produtos", "{{produtoId}}"]
+						}
+					}
+				},
+				{
+					"name": "Inativar Produto",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{produto_base_url}}/produtos/{{produtoId}}",
+							"host": ["{{produto_base_url}}"],
+							"path": ["produtos", "{{produtoId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Estoque",
+			"item": [
+				{
+					"name": "Registrar Entrada de Estoque",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.variables.set(\"estoque_quantidade\", Math.floor(Math.random() * (100 - 10 + 1)) + 10);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"produtoId\": {{produtoId}},\n  \"quantidade\": {{estoque_quantidade}}\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{estoque_base_url}}/estoque/entradas",
+							"host": ["{{estoque_base_url}}"],
+							"path": ["estoque", "entradas"]
+						}
+					}
+				},
+				{
+					"name": "Consultar Saldo de Estoque",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{estoque_base_url}}/estoque/{{produtoId}}",
+							"host": ["{{estoque_base_url}}"],
+							"path": ["estoque", "{{produtoId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Pedido",
+			"item": [
+				{
+					"name": "Criar Pedido",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.variables.set(\"pedido_quantidade\", Math.floor(Math.random() * 5) + 1);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const json = pm.response.json();",
+									"    pm.collectionVariables.set(\"pedidoId\", json.id);",
+									"    console.log(\"pedidoId capturado:\", json.id, \"status inicial:\", json.status);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itens\": [\n    { \"produtoId\": {{produtoId}}, \"quantidade\": {{pedido_quantidade}} }\n  ]\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{pedido_base_url}}/pedidos",
+							"host": ["{{pedido_base_url}}"],
+							"path": ["pedidos"]
+						}
+					}
+				},
+				{
+					"name": "Consultar Pedido (aguarde a saga resolver)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{pedido_base_url}}/pedidos/{{pedidoId}}",
+							"host": ["{{pedido_base_url}}"],
+							"path": ["pedidos", "{{pedidoId}}"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
