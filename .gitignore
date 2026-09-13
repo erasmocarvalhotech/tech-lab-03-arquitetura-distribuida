@@ -2,3 +2,4 @@
 *.bkp
 target/
 *.class
+logs/

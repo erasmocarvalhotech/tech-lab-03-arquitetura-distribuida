@@ -30,6 +30,10 @@ spring:
       simple:
         observation-enabled: true
 
+logging:
+  file:
+    name: ../logs/produto-service/app.log
+
 management:
   tracing:
     sampling:

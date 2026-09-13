@@ -18,10 +18,10 @@ Explorar padrões de arquitetura distribuída (comunicação assíncrona entre s
 - Reserva de estoque via saga coreografada (`reservation-requested` / `reservation-processed`) com lock otimista (`@Version`), reaproveitando o fluxo de retry `-delayed`/`-failed` das filas.
 - Cache Redis no `pedido-service` (não no `produto-service`) — projeção local alimentada pelo stream `product-changed`.
 
-Detalhes completos: proposta, decisões e trade-offs em [openspec/changes/arquitetura-microservicos/](openspec/changes/arquitetura-microservicos/) (`proposal.md`, `design.md`, `specs/`, `tasks.md`); diagrama C4 de containers em [docs/arquitetura-c4-container.drawio](docs/arquitetura-c4-container.drawio); convenção de nomenclatura de filas/exchanges em [docs/taxonomia-filas-rabbitmq.md](docs/taxonomia-filas-rabbitmq.md).
+Detalhes completos: decisões e trade-offs originais em [openspec/changes/archive/2026-09-13-arquitetura-microservicos/](openspec/changes/archive/2026-09-13-arquitetura-microservicos/) (`design.md`), specs canônicas em [openspec/specs/](openspec/specs/) (`cadastro-produto`, `controle-estoque`, `cadastro-pedido`); diagrama C4 de containers em [docs/arquitetura-c4-container.drawio](docs/arquitetura-c4-container.drawio); convenção de nomenclatura de filas/exchanges em [docs/taxonomia-filas-rabbitmq.md](docs/taxonomia-filas-rabbitmq.md).
 
-Tracing distribuído (traceId/spanId correlacionados nos 3 serviços, visualização em Grafana + Tempo): [openspec/changes/observabilidade-tracing/](openspec/changes/observabilidade-tracing/) e guia de uso em [docs/guia-grafana-tempo.md](docs/guia-grafana-tempo.md).
+Observabilidade — tracing distribuído (traceId/spanId correlacionados nos 3 serviços) e logs centralizados, com trace-to-logs no Grafana: [openspec/specs/observabilidade/](openspec/specs/observabilidade/) (spec canônica) e guia de uso em [docs/guia-grafana.md](docs/guia-grafana.md).
 
 ## Status
 
-Arquitetura definida (proposta OpenSpec completa). Implementação dos serviços ainda não iniciada.
+Os 3 microsserviços implementados, testados e integrados via RabbitMQ (fanout de `product-changed`, saga de reserva). Observabilidade completa: tracing distribuído (Tempo) e logs centralizados (Loki), correlacionados por `traceId`/`spanId` com trace-to-logs no Grafana.
