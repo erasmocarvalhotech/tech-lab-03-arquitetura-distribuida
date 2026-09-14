@@ -13,6 +13,7 @@ import org.springframework.amqp.core.MessageProperties;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +49,7 @@ class ProductChangedListenerTest {
         verify(produtoCacheService).upsert(captor.capture());
         assertThat(captor.getValue().produtoId()).isEqualTo(123L);
         assertThat(captor.getValue().preco()).isEqualByComparingTo("19.90");
+        assertThat(captor.getValue().occurredAt()).isEqualTo(event.occurredAt());
     }
 
     @Test
@@ -58,7 +60,7 @@ class ProductChangedListenerTest {
 
         listener.onProductChanged(event, message, "product-updated");
 
-        verify(produtoCacheService).upsert(new ProdutoCacheDTO(123L, "Produto X", new BigDecimal("24.90"), true));
+        verify(produtoCacheService).upsert(new ProdutoCacheDTO(123L, "Produto X", new BigDecimal("24.90"), true, event.occurredAt()));
     }
 
     @Test
@@ -71,6 +73,48 @@ class ProductChangedListenerTest {
 
         verify(produtoCacheService).evict(123L);
         verify(produtoCacheService, never()).upsert(any());
+    }
+
+    @Test
+    void eventoMaisAntigoQueOEstadoAtualDoCache_eDescartadoSemAtualizarNemRemover() {
+        listener = new ProductChangedListener(produtoCacheService, retryPolicy, FILA);
+        OffsetDateTime agora = OffsetDateTime.now();
+        ProdutoCacheDTO cacheAtual = new ProdutoCacheDTO(123L, "Produto X", new BigDecimal("24.90"), true, agora);
+        when(produtoCacheService.buscar(123L)).thenReturn(Optional.of(cacheAtual));
+        ProductChangedEvent eventoAtrasado = new ProductChangedEvent(
+                "e-antigo", agora.minusSeconds(5), 123L, "SKU-1", "Produto X", new BigDecimal("19.90"), true);
+
+        listener.onProductChanged(eventoAtrasado, message, "product-updated");
+
+        verify(produtoCacheService, never()).upsert(any());
+    }
+
+    @Test
+    void eventoDeDesativacaoMaisAntigoQueOEstadoAtualDoCache_eDescartadoSemRemover() {
+        listener = new ProductChangedListener(produtoCacheService, retryPolicy, FILA);
+        OffsetDateTime agora = OffsetDateTime.now();
+        ProdutoCacheDTO cacheAtual = new ProdutoCacheDTO(123L, "Produto X", new BigDecimal("24.90"), true, agora);
+        when(produtoCacheService.buscar(123L)).thenReturn(Optional.of(cacheAtual));
+        ProductChangedEvent desativacaoAtrasada = new ProductChangedEvent(
+                "e-antigo", agora.minusSeconds(5), 123L, "SKU-1", "Produto X", new BigDecimal("19.90"), false);
+
+        listener.onProductChanged(desativacaoAtrasada, message, "product-deactivated");
+
+        verify(produtoCacheService, never()).evict(123L);
+    }
+
+    @Test
+    void eventoMaisNovoQueOEstadoAtualDoCache_atualizaNormalmente() {
+        listener = new ProductChangedListener(produtoCacheService, retryPolicy, FILA);
+        OffsetDateTime agora = OffsetDateTime.now();
+        ProdutoCacheDTO cacheAtual = new ProdutoCacheDTO(123L, "Produto X", new BigDecimal("19.90"), true, agora);
+        when(produtoCacheService.buscar(123L)).thenReturn(Optional.of(cacheAtual));
+        ProductChangedEvent eventoRecente = new ProductChangedEvent(
+                "e-novo", agora.plusSeconds(5), 123L, "SKU-1", "Produto X", new BigDecimal("24.90"), true);
+
+        listener.onProductChanged(eventoRecente, message, "product-updated");
+
+        verify(produtoCacheService).upsert(new ProdutoCacheDTO(123L, "Produto X", new BigDecimal("24.90"), true, eventoRecente.occurredAt()));
     }
 
     @Test

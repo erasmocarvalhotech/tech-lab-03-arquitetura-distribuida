@@ -49,14 +49,38 @@ public class ProductChangedListener {
     }
 
     private void aplicarEvento(String eventType, ProductChangedEvent event) {
+        boolean reconhecido = EVENT_TYPE_CREATED.equals(eventType) || EVENT_TYPE_UPDATED.equals(eventType)
+                || EVENT_TYPE_DEACTIVATED.equals(eventType);
+        if (!reconhecido) {
+            log.debug("event-type={} ignorado pelo pedido-service (produtoId={})", eventType, event.produtoId());
+            return;
+        }
+
+        if (eventoDesatualizado(event)) {
+            log.debug("Evento product-changed descartado por estar desatualizado: produtoId={} eventType={} occurredAt={}",
+                    event.produtoId(), eventType, event.occurredAt());
+            return;
+        }
+
         if (EVENT_TYPE_CREATED.equals(eventType) || EVENT_TYPE_UPDATED.equals(eventType)) {
-            produtoCacheService.upsert(new ProdutoCacheDTO(event.produtoId(), event.nome(), event.preco(), event.ativo()));
+            produtoCacheService.upsert(new ProdutoCacheDTO(event.produtoId(), event.nome(), event.preco(), event.ativo(), event.occurredAt()));
             log.info("Cache local de produto atualizado: produtoId={} eventType={}", event.produtoId(), eventType);
-        } else if (EVENT_TYPE_DEACTIVATED.equals(eventType)) {
+        } else {
             produtoCacheService.evict(event.produtoId());
             log.info("Cache local de produto removido: produtoId={}", event.produtoId());
-        } else {
-            log.debug("event-type={} ignorado pelo pedido-service (produtoId={})", eventType, event.produtoId());
         }
+    }
+
+    /**
+     * Mitigacao do risco "evento fora de ordem" (design.md da spec arquitetura-microservicos):
+     * um evento nao mais recente que o occurredAt ja aplicado no cache local e descartado, para
+     * que uma reentrega ou entrega fora de ordem no stream product-changed nao sobrescreva um
+     * estado mais novo com um mais antigo.
+     */
+    private boolean eventoDesatualizado(ProductChangedEvent event) {
+        return produtoCacheService.buscar(event.produtoId())
+                .map(ProdutoCacheDTO::occurredAt)
+                .map(occurredAtAtual -> !event.occurredAt().isAfter(occurredAtAtual))
+                .orElse(false);
     }
 }

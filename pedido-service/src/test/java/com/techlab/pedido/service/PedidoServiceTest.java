@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +46,7 @@ class PedidoServiceTest {
     @Test
     void criar_usaPrecoDoCacheLocalEPublicaPedidoCriadoEvent() {
         Long produtoId = 123L;
-        ProdutoCacheDTO produtoCache = new ProdutoCacheDTO(produtoId, "Produto X", new BigDecimal("19.90"), true);
+        ProdutoCacheDTO produtoCache = new ProdutoCacheDTO(produtoId, "Produto X", new BigDecimal("19.90"), true, OffsetDateTime.now());
         when(produtoCacheService.buscar(produtoId)).thenReturn(Optional.of(produtoCache));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -73,7 +74,7 @@ class PedidoServiceTest {
     @Test
     void criar_rejeitaQuandoProdutoInativoNoCacheLocal() {
         Long produtoId = 321L;
-        ProdutoCacheDTO produtoInativo = new ProdutoCacheDTO(produtoId, "Produto Inativo", new BigDecimal("10.00"), false);
+        ProdutoCacheDTO produtoInativo = new ProdutoCacheDTO(produtoId, "Produto Inativo", new BigDecimal("10.00"), false, OffsetDateTime.now());
         when(produtoCacheService.buscar(produtoId)).thenReturn(Optional.of(produtoInativo));
 
         PedidoRequest request = new PedidoRequest(List.of(new ItemPedidoRequest(produtoId, 1)));
