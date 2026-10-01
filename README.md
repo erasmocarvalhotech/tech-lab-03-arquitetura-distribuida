@@ -22,6 +22,49 @@ Detalhes completos: decisões e trade-offs originais em [openspec/changes/archiv
 
 Observabilidade — tracing distribuído (traceId/spanId correlacionados nos 3 serviços) e logs centralizados, com trace-to-logs no Grafana: [openspec/specs/observabilidade/](openspec/specs/observabilidade/) (spec canônica) e guia de uso em [docs/guia-grafana.md](docs/guia-grafana.md).
 
+## Como subir o projeto
+
+Pré-requisitos: Java 21, Maven 3.9+, Docker + Docker Compose.
+
+1. Suba toda a infraestrutura (3 Postgres, RabbitMQ, Redis, Tempo, Loki, Alloy, Grafana) a partir da raiz do repositório:
+
+   ```bash
+   docker compose up -d
+   ```
+
+   Aguarde ficarem `healthy`:
+
+   ```bash
+   docker compose ps
+   ```
+
+2. Suba os três serviços, cada um em um terminal, a partir da sua própria pasta:
+
+   ```bash
+   cd produto-service && mvn spring-boot:run
+   cd estoque-service && mvn spring-boot:run
+   cd pedido-service  && mvn spring-boot:run
+   ```
+
+   Cada serviço roda suas próprias migrations Flyway automaticamente na inicialização. Detalhes, variáveis de ambiente e exemplos de requisição no README de cada um: [produto-service](produto-service/README.md), [estoque-service](estoque-service/README.md), [pedido-service](pedido-service/README.md).
+
+### URLs e credenciais
+
+| Serviço | URL | Usuário / senha |
+|---|---|---|
+| produto-service (REST) | `http://localhost:8081` | — |
+| estoque-service (REST) | `http://localhost:8082` | — |
+| pedido-service (REST) | `http://localhost:8083` | — |
+| RabbitMQ (painel de management) | `http://localhost:15672` | `techlab` / `techlab` |
+| RabbitMQ (AMQP) | `localhost:5672` | `techlab` / `techlab` |
+| Grafana (tracing + logs) | `http://localhost:3000` | login anônimo (Admin), sem senha |
+| Postgres `db_produto` | `localhost:5432` | `techlab` / `techlab` |
+| Postgres `db_estoque` | `localhost:5436` | `techlab` / `techlab` |
+| Postgres `db_pedido` | `localhost:5434` | `techlab` / `techlab` |
+| Redis (cache do pedido-service) | `localhost:6379` | sem senha |
+
+Guia de uso do Grafana (busca de traces, correlação trace-to-logs): [docs/guia-grafana.md](docs/guia-grafana.md).
+
 ## Status
 
 Os 3 microsserviços implementados, testados e integrados via RabbitMQ (fanout de `product-changed`, saga de reserva). Observabilidade completa: tracing distribuído (Tempo) e logs centralizados (Loki), correlacionados por `traceId`/`spanId` com trace-to-logs no Grafana.
